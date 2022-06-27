@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Gmail Message Downloader",
+  "version": "0.1",
+  "description": "Makes it easier to download message files from the Gmail UI",
+  "icons": {
+    "48": "icons/48.png",
+    "128": "icons/128.png",
+    "512": "icons/512.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "48": "icons/48.png"
+    },
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/*"
+  ]
+}
