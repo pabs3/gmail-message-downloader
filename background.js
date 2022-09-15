@@ -58,9 +58,10 @@ async function downloadMessagesFromConversationView(tab) {
           console.log('I have ' + clickTargets.length + ' click targets');
           for (const clickTarget of clickTargets) {
             console.log('Here comes one...');
-            await delay(2000).then(() => {
-              console.log('After timeout, clicking now');
-              clickTarget.dispatchEvent(generateEvent('click'));
+            await delay(1000).then(() => {
+              console.log('After timeout, clicking on', clickTarget);
+              const rect = clickTarget.getBoundingClientRect();
+              clickTarget.dispatchEvent(generateEvent('mousedown'));
             });
           }
         }).then(() => {
@@ -69,32 +70,6 @@ async function downloadMessagesFromConversationView(tab) {
       }
   });
 }
-
-
-          // const i = document.evaluate('//div[text()="Download message"]',
-              // document, null, XPathResult.ANY_TYPE, null );
-          // const downloadButton = i.iterateNext();
-//
-          // console.log(downloadButton.clientX);
-          // console.log(downloadButton.clientY);
-//
-          // let currentElement = downloadButton;
-          // while(currentElement.getAttribute('role') !== 'menu') {
-            // currentElement = currentElement.parentElement;
-          // }
-          // console.log(currentElement);
-          // const rect = downloadButton.getClientRects()[0];
-          // const preciseEvent = new MouseEvent('click', {
-              // view: window,
-              // bubbles: true,
-              // cancelable: true,
-              // screenX: rect.left,
-              // screenY: rect.top,
-          // });
-          // console.log(preciseEvent);
-          // currentElement.dispatchEvent(preciseEvent);
-          // downloadButton.dispatchEvent(generateEvent('mousedown'));
-
 
 chrome.action.onClicked.addListener((tab) => {
   downloadMessagesFromConversationView(tab);
