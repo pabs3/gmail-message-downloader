@@ -17,9 +17,9 @@ async function downloadMessagesFromConversationView(tab) {
           });
         };
 
-        const delay = (t, v) => {
-          return new Promise(function(resolve) {
-            setTimeout(resolve.bind(null, v), t)
+        const delay = (milliseconds) => {
+          return new Promise((resolve, reject) => {
+            setTimeout(resolve.bind(null), milliseconds);
           });
         };
 
@@ -33,48 +33,38 @@ async function downloadMessagesFromConversationView(tab) {
           });
         }) : Promise.resolve();
 
-        return expandPromise.then(() => {
+        return expandPromise.then(async () => {
           const moreButtons = document.querySelectorAll('[aria-label="More"]');
           if (!moreButtons) {
-            console.log('Could not find the more button');
+            console.log('Could not find any "more" button');
             return;
           }
-          console.log('Found more buttons: ', moreButtons);
-
-          const downloadMessagesPromises = [];
+          console.log('Found ' + moreButtons.length + ' more buttons: ');
 
           // There is one more button at the top of the page (we don't want that
           // one), and then one per message. The only way I've seen to distinguish
           // them so far is that the parent of the first one is a <div> and a
           // <td> for the others.
+          const clickTargets = [];
           for (const moreButton of moreButtons) {
-            console.log(moreButton.parentNode.tagName);
             if (moreButton.parentNode.tagName.toLowerCase() === 'div') {
               // This is the top more button, we don't want that one.
               console.log('Skipping top "more" button');
               continue;
             }
-            console.log('Found more button on message', moreButton);
-            const downloadThisMessagePromise = new Promise((resolve, reject) => {
-              return delay(2000).then(() => {
-                console.log('After timeout, clicking...');
-                moreButton.dispatchEvent(generateEvent('click'));
-              });
-            });
-            downloadMessagesPromises.push(downloadMessagesPromise);
+            clickTargets.push(moreButton);
           }
 
-          // Now we have all the promises, let's run them in sequence.
-          return downloadMessagesPromises.reduce(
-            (promiseChain, currentTask) => {
-              return promiseChain.then(chainResults => currentTask.then(
-                (currentResult) => [...chainResults, currentResult])
-              );
-            },
-            Promise.resolve([]).then((arrayOfResults) => {
-              console.log('We got results: ', arrayOfResults);
-            })
-          );
+          console.log('I have ' + clickTargets.length + ' click targets');
+          for (const clickTarget of clickTargets) {
+            console.log('Here comes one...');
+            await delay(2000).then(() => {
+              console.log('After timeout, clicking now');
+              clickTarget.dispatchEvent(generateEvent('click'));
+            });
+          }
+        }).then(() => {
+          console.log('All done.');
         });
       }
   });
