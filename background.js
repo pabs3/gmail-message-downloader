@@ -4,6 +4,25 @@ async function getCurrentTab() {
   return tab;
 }
 
+function findAllSelectedConversations(tab) {
+  const returnValue = chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      args: [],
+      func: () => {
+        console.log('Finding all selected conversations');
+        const variable = 2;
+      }
+  });
+  console.log('Return value: ', returnValue);
+  return returnValue;
+}
+
+function goToConversationView(tab, identifier) {
+}
+
+function goBackToThreadListView(tab) {
+}
+
 async function downloadMessagesFromConversationView(tab) {
   chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -72,5 +91,11 @@ async function downloadMessagesFromConversationView(tab) {
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  downloadMessagesFromConversationView(tab);
+  // downloadMessagesFromConversationView(tab);
+  const selectedConversations = findAllSelectedConversations(tab);
+  for (const selectedConversation of selectedConversations) {
+    goToConversationView(selectedConversation);
+    downloadMessagesFromConversationView(tab);
+    goBackToThreadListView(tab);
+  }
 });
