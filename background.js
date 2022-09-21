@@ -5,17 +5,51 @@ async function getCurrentTab() {
 }
 
 function findAllSelectedConversations(tab) {
-  const returnValue = chrome.scripting.executeScript({
+  return new Promise((resolve, reject) => {
+  chrome.scripting.executeScript({
       target: { tabId: tab.id },
       args: [],
       func: () => {
-        console.log('Finding all selected conversations');
-        const variable = 2;
-        return variable;
+
+        function getXPathForElement(element) {
+          const idx = (sib, name) => sib
+            ? idx(sib.previousElementSibling, name||sib.localName) + (sib.localName == name)
+            : 1;
+          const segs = elm => !elm || elm.nodeType !== 1
+            ? ['']
+            : elm.id && document.getElementById(elm.id) === elm
+              ? [`id("${elm.id}")`]
+              : [...segs(elm.parentNode), elm instanceof HTMLElement
+                ? `${elm.localName}[${idx(elm)}]`
+                : `*[local-name() = "${elm.localName}"][${idx(elm)}]`];
+          return segs(element).join('/');
+        }
+
+        const checkboxes = document.querySelectorAll('[role="checkbox"]');
+        const checkedBoxes = [];
+        for (const checkbox of checkboxes) {
+          if (checkbox.getAttribute('aria-checked') === 'true') {
+            checkedBoxes.push(checkbox);
+          }
+        }
+        const conversations = document.querySelectorAll('[role="row"]');
+        const selectedConversations = [];
+        const xpaths = [];
+        for (const conversation of conversations) {
+          for (const checkedBox of checkedBoxes) {
+            if (conversation.contains(checkedBox)) {
+              selectedConversations.push(conversation);
+              xpaths.push(getXPathForElement(conversation));
+              break;
+            }
+          }
+        }
+        return xpaths;
       }}, (results) => {
-        console.log(results);
-        return results;
+        // Get the first element, corresponding to the first (and only) frame.
+        resolve(results[0].result);
       });
+  });
 }
 
 function goToConversationView(tab, identifier) {
@@ -49,7 +83,8 @@ async function downloadMessagesFromConversationView(tab) {
         };
 
         // Some of the messages may be collapsed
-        const expandAllButton = document.querySelector('[aria-label="Expand all"]');
+        const expandAllButton = document.querySelector(
+            '[aria-label="Expand all"]');
         const expandPromise = expandAllButton ? new Promise((resolve, reject) => {
           expandAllButton.dispatchEvent(generateMouseEvent('click'));
           return delay(500).then(() => {
@@ -83,16 +118,17 @@ async function downloadMessagesFromConversationView(tab) {
               clickTarget.dispatchEvent(generateMouseEvent('mousedown'));
               clickTarget.dispatchEvent(generateMouseEvent('mouseup'));
               clickTarget.dispatchEvent(generateMouseEvent('click'));
-              const downloadMenuItem = Array.from(document.querySelectorAll('div')).find(
-                  el => el.textContent === 'Download message');
+              const downloadItem = Array.from(
+                  document.querySelectorAll('div')).find(
+                      el => el.textContent === 'Download message');
               await delay(1000).then(async () => {
-                downloadMenuItem.dispatchEvent(generateMouseEvent('mousedown'));
-                downloadMenuItem.dispatchEvent(generateMouseEvent('mouseup'));
-                downloadMenuItem.dispatchEvent(generateMouseEvent('click'));
+                downloadItem.dispatchEvent(generateMouseEvent('mousedown'));
+                downloadItem.dispatchEvent(generateMouseEvent('mouseup'));
+                downloadItem.dispatchEvent(generateMouseEvent('click'));
                 await delay(1000).then(() => {
-                  downloadMenuItem.dispatchEvent(generateMouseEvent('mousedown'));
-                  downloadMenuItem.dispatchEvent(generateMouseEvent('mouseup'));
-                  downloadMenuItem.dispatchEvent(generateMouseEvent('click'));
+                  downloadItem.dispatchEvent(generateMouseEvent('mousedown'));
+                  downloadItem.dispatchEvent(generateMouseEvent('mouseup'));
+                  downloadItem.dispatchEvent(generateMouseEvent('click'));
                 });
               });
             });
@@ -109,9 +145,11 @@ async function downloadMessagesFromConversationView(tab) {
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  downloadMessagesFromConversationView(tab);
-  /* const selectedConversations = findAllSelectedConversations(tab);
-  for (const selectedConversation of selectedConversations) {
+  // downloadMessagesFromConversationView(tab);
+  const selectedConversationXpaths = findAllSelectedConversations(tab).then((results) => {
+    console.log(results);
+  });
+  /* for (const selectedConversation of selectedConversations) {
     goToConversationView(selectedConversation);
     downloadMessagesFromConversationView(tab);
     goBackToThreadListView(tab);
