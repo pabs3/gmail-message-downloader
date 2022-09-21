@@ -11,10 +11,11 @@ function findAllSelectedConversations(tab) {
       func: () => {
         console.log('Finding all selected conversations');
         const variable = 2;
-      }
-  });
-  console.log('Return value: ', returnValue);
-  return returnValue;
+        return variable;
+      }}, (results) => {
+        console.log(results);
+        return results;
+      });
 }
 
 function goToConversationView(tab, identifier) {
@@ -28,11 +29,16 @@ async function downloadMessagesFromConversationView(tab) {
       target: { tabId: tab.id },
       args: [],
       func: () => {
-        const generateEvent = (type) => {
+        const generateMouseEvent = (type) => {
           return new MouseEvent(type, {
               view: window,
               bubbles: true,
               cancelable: true,
+          });
+        };
+        const generateKeyEvent = (keyString) => {
+          return new KeyboardEvent('keydown', {
+            key: keyString,
           });
         };
 
@@ -44,9 +50,8 @@ async function downloadMessagesFromConversationView(tab) {
 
         // Some of the messages may be collapsed
         const expandAllButton = document.querySelector('[aria-label="Expand all"]');
-        console.log('Expand all button? ', expandAllButton);
         const expandPromise = expandAllButton ? new Promise((resolve, reject) => {
-          expandAllButton.dispatchEvent(generateEvent('click'));
+          expandAllButton.dispatchEvent(generateMouseEvent('click'));
           return delay(500).then(() => {
             resolve();
           });
@@ -58,7 +63,6 @@ async function downloadMessagesFromConversationView(tab) {
             console.log('Could not find any "more" button');
             return;
           }
-          console.log('Found ' + moreButtons.length + ' more buttons: ');
 
           // There is one more button at the top of the page (we don't want that
           // one), and then one per message. The only way I've seen to distinguish
@@ -68,34 +72,48 @@ async function downloadMessagesFromConversationView(tab) {
           for (const moreButton of moreButtons) {
             if (moreButton.parentNode.tagName.toLowerCase() === 'div') {
               // This is the top more button, we don't want that one.
-              console.log('Skipping top "more" button');
               continue;
             }
             clickTargets.push(moreButton);
           }
 
-          console.log('I have ' + clickTargets.length + ' click targets');
           for (const clickTarget of clickTargets) {
-            console.log('Here comes one...');
-            await delay(1000).then(() => {
-              console.log('After timeout, clicking on', clickTarget);
+            await delay(1000).then(async () => {
               const rect = clickTarget.getBoundingClientRect();
-              clickTarget.dispatchEvent(generateEvent('mousedown'));
+              clickTarget.dispatchEvent(generateMouseEvent('mousedown'));
+              clickTarget.dispatchEvent(generateMouseEvent('mouseup'));
+              clickTarget.dispatchEvent(generateMouseEvent('click'));
+              const downloadMenuItem = Array.from(document.querySelectorAll('div')).find(
+                  el => el.textContent === 'Download message');
+              await delay(1000).then(async () => {
+                downloadMenuItem.dispatchEvent(generateMouseEvent('mousedown'));
+                downloadMenuItem.dispatchEvent(generateMouseEvent('mouseup'));
+                downloadMenuItem.dispatchEvent(generateMouseEvent('click'));
+                await delay(1000).then(() => {
+                  downloadMenuItem.dispatchEvent(generateMouseEvent('mousedown'));
+                  downloadMenuItem.dispatchEvent(generateMouseEvent('mouseup'));
+                  downloadMenuItem.dispatchEvent(generateMouseEvent('click'));
+                });
+              });
             });
           }
         }).then(() => {
           console.log('All done.');
         });
-      }
-  });
+      }},
+      (injectionResults) => {
+        for (const frameResult of injectionResults) {
+          console.log('Result: ' + frameResult.result);
+        }
+      });
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  // downloadMessagesFromConversationView(tab);
-  const selectedConversations = findAllSelectedConversations(tab);
+  downloadMessagesFromConversationView(tab);
+  /* const selectedConversations = findAllSelectedConversations(tab);
   for (const selectedConversation of selectedConversations) {
     goToConversationView(selectedConversation);
     downloadMessagesFromConversationView(tab);
     goBackToThreadListView(tab);
-  }
+  } */
 });
