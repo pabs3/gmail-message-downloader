@@ -87,7 +87,7 @@ async function downloadMessagesFromConversationView(tab) {
             '[aria-label="Expand all"]');
         const expandPromise = expandAllButton ? new Promise((resolve, reject) => {
           expandAllButton.dispatchEvent(generateMouseEvent('click'));
-          return delay(500).then(() => {
+          return delay(300).then(() => {
             resolve();
           });
         }) : Promise.resolve();
@@ -113,7 +113,7 @@ async function downloadMessagesFromConversationView(tab) {
           }
 
           for (const clickTarget of clickTargets) {
-            await delay(1000).then(async () => {
+            await delay(200).then(async () => {
               const rect = clickTarget.getBoundingClientRect();
               clickTarget.dispatchEvent(generateMouseEvent('mousedown'));
               clickTarget.dispatchEvent(generateMouseEvent('mouseup'));
@@ -121,11 +121,11 @@ async function downloadMessagesFromConversationView(tab) {
               const downloadItem = Array.from(
                   document.querySelectorAll('div')).find(
                       el => el.textContent === 'Download message');
-              await delay(1000).then(async () => {
+              await delay(200).then(async () => {
                 downloadItem.dispatchEvent(generateMouseEvent('mousedown'));
                 downloadItem.dispatchEvent(generateMouseEvent('mouseup'));
                 downloadItem.dispatchEvent(generateMouseEvent('click'));
-                await delay(1000).then(() => {
+                await delay(200).then(() => {
                   downloadItem.dispatchEvent(generateMouseEvent('mousedown'));
                   downloadItem.dispatchEvent(generateMouseEvent('mouseup'));
                   downloadItem.dispatchEvent(generateMouseEvent('click'));
