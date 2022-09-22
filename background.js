@@ -145,10 +145,21 @@ async function downloadMessagesFromConversationView(tab) {
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  // downloadMessagesFromConversationView(tab);
-  const selectedConversationXpaths = findAllSelectedConversations(tab).then((results) => {
-    console.log(results);
-  });
+  console.log(tab);
+  if (!tab.url.includes('mail.google.com')) {
+    // We can't do much if this isn't Gmail.
+    console.warn('Wrong tab, sorry!');
+  }
+  if (tab.url.endsWith('#inbox')) {
+    console.log('TODO: TL view. go into each selected conversation and download messages');
+    const selectedConversationXpaths = findAllSelectedConversations(tab).then((results) => {
+      console.log(results);
+    });
+  } else {
+    // Let's assume for now that we are in a conversation view.
+    console.log('Conv view. Downloading messages from this conversation.');
+    downloadMessagesFromConversationView(tab);
+  }
   /* for (const selectedConversation of selectedConversations) {
     goToConversationView(selectedConversation);
     downloadMessagesFromConversationView(tab);
