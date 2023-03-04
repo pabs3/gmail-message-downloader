@@ -9,7 +9,7 @@
     "512": "icons/512.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "action": {
     "default_icon": {
